@@ -1,0 +1,209 @@
+<html>
+<head>
+    <style>
+        .cpanel {
+            display: inline-block;
+        }
+    </style>
+    <script type="text/javascript" >
+        
+        function suckplay() {
+            var btn = document.getElementById('pbtn');
+            var curstate = btn.getAttribute('pstate');
+            if (curstate == 'stop') {
+                btn.setAttribute('pstate','play');
+                btn.innerHTML='stop'
+                playtick()
+            } else if(curstate == 'play') {
+                btn.setAttribute('pstate','stop');
+                btn.innerHTML='play'
+            }
+        }
+            
+        function playtick() {
+            var btn = document.getElementById('pbtn');
+            var curstate = btn.getAttribute('pstate');
+            if (curstate == 'play') {
+                currentp = getPersistInt('currentpos', 0);
+                var ifsv = parseInt(document.getElementById('vfs').value);
+                currentp += ifsv;
+                var moreplay = true
+                if (currentp < 0) {
+                    currentp = 0;
+                    moreplay = false;
+                } else if (currentp > getmaxpos()) {
+                    currentp = getmaxpos();
+                    moreplay=false;
+                } else {
+                    var pmaxel = document.getElementById('vposb');
+                    var pmax = parseInt(pmaxel.value)
+                    if (currentp > pmax) {
+                        currentp =  pmax;
+                        moreplay=false;
+                    }
+                }
+                setPersist('currentpos', currentp);
+                setpos(currentp);
+                if (moreplay) {
+                    var ifr = document.getElementById('vfr');
+                    var tout = 1000.0/parseFloat(ifr.value)
+                    setTimeout(playtick, tout)
+                } else {
+                    var btn = document.getElementById('pbtn');
+                    btn.setAttribute('pstate','stop');
+                    btn.innerHTML='play'
+                }
+            }
+        }
+        
+        function startpage() {
+            movepos(0)
+            var lstore = window['localStorage'];
+            for (var i = 0; i < lstore.length; i++){
+                var k = lstore.key(i)
+                var ik = k.split('.');
+                var iv = lstore.getItem(k);
+                var target = document.getElementById(ik[0])
+                if (!(target === null)) {
+                    switch (ik[1]) {
+                        case 'top':
+                            target.style.top = iv;
+                            break;
+                        case 'left':
+                            target.style.left = iv
+                            break;
+                        case 'size':
+                            target.style.width = iv;
+                            target.style.height = iv;
+                            target = document.getElementById('lim')
+                            target.style.width = iv;
+                            target = document.getElementById('rim')
+                            target.style.width = iv;
+                            break;
+                    }
+                }
+            }
+        }
+        
+        function movepos(adjustby) {
+            currentp = getPersistInt('currentpos', 0);
+            currentp += adjustby;
+            if (currentp < 0) {
+                currentp = 0;
+            } else if (currentp > getmaxpos()) {
+                currentp =  getmaxpos();
+            }
+            setPersist('currentpos', currentp);
+            setpos(currentp);
+        }
+        
+        function golimit(dir) {
+            currentp = (dir == 0)?0:getmaxpos();
+            setPersist('currentpos', currentp);
+            setpos(currentp);
+        }
+        
+        function setpos(posn) {
+            var pmarker = document.getElementById('vposa');
+            pmarker.value = posn
+            document.getElementById('mainpane').src = (posn == 0)?'0.jpg':posn.toString() + '.jpg';
+        }
+        
+        function getPersist(pname) {
+            return window['localStorage'].getItem(pname);
+        }
+        
+        function getPersistInt(pname, defval) {
+            var mystore = window['localStorage'];
+            if(!mystore.getItem(pname)) {
+                mystore.setItem(pname,defval);
+            }
+            rv = parseInt(mystore.getItem(pname));
+            if (isNaN(rv)) {
+                mystore.setItem(pname,defval);
+                return defval
+            } else {
+                return rv
+            }
+        }
+        
+        function setPersist(pname,pval) {
+            window['localStorage'].setItem(pname, pval);
+        }
+        
+        function getmaxpos() {
+            return document.getElementById('vposa').getAttribute('max')
+        }
+
+        function toggleFullScreen() {
+            // from http://www.html5rocks.com/en/mobile/fullscreen/
+            var doc = window.document;
+            var docEl = doc.documentElement;
+
+            var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+            if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+    </script>
+</head>
+    <body onload="startpage()">
+        <div id="controls">
+            <table>
+                <tr>
+                    <td>
+                        <div id="flipmodebtn" >..</div>
+                    </td>
+                    <td colspan="2">
+                        <span onclick="golimit(0)">&nbsp;&#x21E4;&nbsp;</span>
+                        <span onclick="movepos(-500)">&nbsp;&lt;&lt;&lt;&lt;&lt;&nbsp;</span>
+                        <span onclick="movepos(-50)">&nbsp;&lt;&lt;&lt;&lt;&nbsp;</span>
+                        <span onclick="movepos(-10)">&nbsp;&lt;&lt;&lt;&nbsp;</span>
+                        <span onclick="movepos(-3)">&nbsp;&lt;&lt;&nbsp;</span>
+                        <span onclick="movepos(-1)">&nbsp;&lt;&nbsp;</span>
+                        <span onclick="movepos(+1)">&nbsp;&gt;&nbsp;</span>
+                        <span onclick="movepos(+3)">&nbsp;&gt;&gt;&nbsp;</span>
+                        <span onclick="movepos(+10)">&nbsp;&gt;&gt;&gt;&nbsp;</span>
+                        <span onclick="movepos(+50)">&nbsp;&gt;&gt;&gt;&gt;&nbsp;</span>
+                        <span onclick="movepos(+500)">&nbsp;&gt;&gt;&gt;&gt;&gt;&nbsp;</span>
+                        <span onclick="golimit(1)">&nbsp;&#x21E5;&nbsp;</span>
+                    </td>
+                </tr>
+            </table>
+            <table class="cpanel">
+                <tr>
+                    <td><label for="vfr">frame rate (fps):</label></td>
+                    <td>
+                        <input style="width: 4em;"id="vfr" type="number" min="1" max="100" step="1" value="3"/>
+                    </td>
+                    <td><label for="vfs">frame step:</label></td>
+                    <td>
+                        <input style="width: 4em;" id="vfs" type="number" min="1" max="500" step="1" value="1"/>
+                    </td>
+                    <td colspan="2" >
+                        <div pstate="stop" id="pbtn" onclick="suckplay()">Play</div>
+                    </td>
+                    <td></td>
+                    <td ><span class="pb" onclick="toggleFullScreen()">Fullscreen</span></td>
+                </tr>
+                <tr>
+                    <td><label for="vposa">currently at:</label></td>
+                    <td>
+                        <input disabled="disabled" style="width: 6em;" id="vposa" type="number" min="1" max="{$x$}" step="1" value="0"/>
+                    </td>
+                    <td><label for="vposb">finish at</label></td>
+                    <td>
+                        <input style="width: 6em;" id="vposb" type="number" min="1" step="1" value="{$x$}"/>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div id="monarea">
+            <img id="mainpane" width="640" />
+        </div>
+    </body>
+</html>
